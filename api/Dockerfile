@@ -16,7 +16,6 @@ COPY . .
 # Expose the port the app runs on
 EXPOSE 5000
 
-# Run the app. We use gunicorn with an eventlet worker for WebSocket support.
-# This is the standard way to run a Flask-SocketIO app in production.
-CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "main:app", "-b", "0.0.0.0:5000"]
+# Run the app. We now use a gevent worker for WebSocket support.
+CMD ["gunicorn", "--worker-class", "geventwebsocket", "-w", "1", "main:app", "-b", "0.0.0.0:5000"]
 

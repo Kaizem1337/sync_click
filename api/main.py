@@ -5,9 +5,9 @@ import logging
 # --- Application Setup ---
 app = Flask(__name__)
 # The secret key is needed for session management, although we don't use sessions heavily.
-app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed' 
-# We use eventlet as the async mode for WebSocket performance
-socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
+app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed'
+# We now use gevent as the async mode for better Windows compatibility
+socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -29,16 +29,16 @@ def record_click():
     """
     data = request.json if request.is_json else {}
     coords = data.get('coords')
-    
+
     # Broadcast the 'click_event' to all connected WebSocket clients.
     # The payload includes the coordinates if they were sent.
     socketio.emit('click_event', {'coords': coords})
-    
+
     if coords:
         logging.info(f"Click event received with coords {coords}, broadcasting to clients.")
     else:
         logging.info("Click event received without coords, broadcasting to clients.")
-        
+
     return jsonify({"status": "ok", "message": "Click event broadcasted."})
 
 # --- WebSocket Event Handlers ---
