@@ -1,26 +1,22 @@
 # Use an official Python runtime as a parent image
 FROM python:3.9-slim
 
-# Set the working directory inside the container
+# Set the working directory in the container
 WORKDIR /app
 
 # Copy the dependencies file to the working directory
-# This is done first to leverage Docker's layer caching.
-# The dependencies will only be re-installed if requirements.txt changes.
 COPY requirements.txt .
 
-# Install the Python dependencies
+# Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of your application code into the container
+# Copy the content of the local src directory to the working directory
 COPY . .
 
-# Expose the port that Flask will run on
+# Expose the port the app runs on
 EXPOSE 5000
 
-# Set environment variables for Flask
-ENV FLASK_APP=main.py
-ENV FLASK_RUN_HOST=0.0.0.0
+# Run the app. We use gunicorn with an eventlet worker for WebSocket support.
+# This is the standard way to run a Flask-SocketIO app in production.
+CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "main:app", "-b", "0.0.0.0:5000"]
 
-# The command to run when the container starts
-CMD ["flask", "run"]
