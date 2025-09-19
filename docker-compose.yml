@@ -5,15 +5,17 @@ services:
     build:
       context: ./api
     restart: unless-stopped
+    # THIS 'ports' SECTION IS THE FIX
+    # It maps port 5000 on your host server to port 5000 inside the container.
+    # Format: <HOST_PORT>:<CONTAINER_PORT>
     ports:
-      # Exposes the API on port 5000 of your server.
-      # You can change the left-side number if port 5000 is taken.
-      # Format: <HOST_PORT>:<CONTAINER_PORT>
       - "5000:5000"
     container_name: remote-click-api
     networks:
       - remote-click-net
 
+# This defines the network that Nginx Proxy Manager will also need to join.
 networks:
   remote-click-net:
     driver: bridge
+
