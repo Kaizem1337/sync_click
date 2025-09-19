@@ -1,65 +1,50 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 from flask_socketio import SocketIO, emit
 import logging
 
-# --- Application Setup ---
+# --- App Initialization ---
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+
 app = Flask(__name__)
-# The secret key is needed for session management, although we don't use sessions heavily.
-app.config['SECRET_KEY'] = 'a_very_secret_key_that_should_be_changed'
-# We now use gevent as the async mode for better Windows compatibility
+app.config['SECRET_KEY'] = 'your-very-secret-key-that-is-secure' 
+# In a real app, use an environment variable for this
+
+# Initialize SocketIO with gevent and allow all origins
 socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins="*")
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# --- HTTP Endpoints ---
-
-@app.route("/")
+# --- Standard HTTP Routes ---
+@app.route('/')
 def index():
-    """
-    A simple root endpoint to confirm the API is running via HTTP.
-    """
-    return jsonify({"status": "ok", "message": "Remote Click WebSocket API is running."})
-
-@app.route('/click', methods=['POST'])
-def record_click():
-    """
-    Receives a standard HTTP click event from the host.
-    This is the only part of the old system we're keeping.
-    """
-    data = request.json if request.is_json else {}
-    coords = data.get('coords')
-
-    # Broadcast the 'click_event' to all connected WebSocket clients.
-    # The payload includes the coordinates if they were sent.
-    socketio.emit('click_event', {'coords': coords})
-
-    if coords:
-        logging.info(f"Click event received with coords {coords}, broadcasting to clients.")
-    else:
-        logging.info("Click event received without coords, broadcasting to clients.")
-
-    return jsonify({"status": "ok", "message": "Click event broadcasted."})
+    """A simple health check endpoint to verify the API is running."""
+    return jsonify({"status": "ok", "message": "Remote click WebSocket API is running."})
 
 # --- WebSocket Event Handlers ---
-
 @socketio.on('connect')
 def handle_connect():
-    """
-    This function is called when a new client connects via WebSocket.
-    """
-    logging.info(f"Client connected: {request.sid}")
+    """Logs when a client connects to the WebSocket."""
+    logging.info('Client connected')
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    """
-    This function is called when a client disconnects.
-    """
-    logging.info(f"Client disconnected: {request.sid}")
+    """Logs when a client disconnects."""
+    logging.info('Client disconnected')
 
-# --- Main Execution ---
-# The entry point is now managed by gunicorn via the Dockerfile.
+@app.route('/click', methods=['POST'])
+def handle_click_http():
+    """
+    Handles a click event from the host PC via a standard POST request.
+    It then broadcasts this event to all connected WebSocket clients.
+    """
+    logging.info('Click event received via HTTP POST')
+    # Broadcast to all clients
+    socketio.emit('click_event', {'coords': None}) 
+    return jsonify({"status": "ok", "message": "Click event broadcasted."})
+
+# --- Main Execution Block ---
+# This block allows us to run the app directly with 'python main.py'
+# The built-in gevent server is the most reliable way to run flask-socketio
 if __name__ == '__main__':
-    # This will run a development server.
+    print("Starting Flask-SocketIO server directly...")
     socketio.run(app, host='0.0.0.0', port=5000)
 

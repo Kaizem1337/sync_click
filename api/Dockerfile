@@ -16,7 +16,7 @@ COPY . .
 # Expose the port the app runs on
 EXPOSE 5000
 
-# Run the app. We use the 'gevent' worker class for WebSocket support.
-# This is the corrected command.
-CMD ["gunicorn", "--worker-class", "gevent", "-w", "1", "main:app", "-b", "0.0.0.0:5000"]
+# Run the app directly using the built-in server.
+# This is simpler and more reliable for WebSockets than gunicorn.
+CMD ["python", "main.py"]
 
